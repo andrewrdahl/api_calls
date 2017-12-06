@@ -5,7 +5,7 @@ import urllib.request
 
 def retrieve_bls():
     area_dict = get_areas()
-    area_type_dict = get_area_type()
+    area_type_dict = {'MT':'Metropolitan Area','CT':'City','ST':'State','CN':'County'}
     measure_type_dict = get_measure_type()
     series_list = get_series()
     thisyear = datetime.date.today().year
@@ -16,9 +16,9 @@ def retrieve_bls():
     data = json.dumps({"seriesid":series_list,"startyear":thisyear-9, "endyear":thisyear})
     p = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/', data=data, headers=headers)
     json_data = json.loads(p.text)
-    outfile = 'results.txt'
-    output = open(outfile,'w')
-    output.write('series,area_type,area,year,period,value,measure,footnote,retrieved' + '\n')
+    outfile = 'laus_data.txt'
+    laus_data = open(outfile,'w')
+    laus_data.write('series,area_type,area,year,period,value,measure,footnote,source,retrieved' + '\n')
     for series in json_data['Results']['series']:
         seriesId = series['seriesID']
         for item in series['data']:
@@ -27,13 +27,13 @@ def retrieve_bls():
             measure = measure_type_dict[seriesId[-2:]]
             value = item['value']
             area = area_dict[seriesId[3:18]].replace(',','')
-            area_type = area_type_dict[seriesId[3]]
+            area_type = area_type_dict[seriesId[3:5]]
             retrieved = str(datetime.date.today())
             footnotes=""
             for footnote in item['footnotes']:
                 if footnote:
                     footnotes = footnotes + footnote['text'] + ','
-            output.write(
+            laus_data.write(
             seriesId + ',' +
             area_type + ',' +
             area + ',' +
@@ -42,9 +42,10 @@ def retrieve_bls():
             measure + ',' +
             value + ',' +
             footnotes[0:-1] + ',' +
+            'Bureau of Labor Statistics: LAUS,' +
             retrieved + '\n'
             )
-    output.close()
+    laus_data.close()
 
 def get_areas():
     bls_areas = urllib.request.urlopen('https://download.bls.gov/pub/time.series/la/la.area')
@@ -59,20 +60,6 @@ def get_areas():
             key_clean = key.replace(",","")
             area_dict[key_clean] = a[2]
     return area_dict
-
-def get_area_type():
-    bls_area_types = urllib.request.urlopen('https://download.bls.gov/pub/time.series/la/la.area_type')
-    area_type_string = []
-    for a in bls_area_types.readlines():
-        line_decode = a.decode()
-        line = line_decode.split('\t')
-        area_type_string.append(line)
-        area_type_dict = {}
-        for a in area_type_string:
-            key = a[0]
-            key_clean = key.replace(",","")
-            area_type_dict[key_clean] = a[1]
-    return area_type_dict
 
 def get_measure_type():
     bls_measure_types = urllib.request.urlopen('https://download.bls.gov/pub/time.series/la/la.measure')
@@ -90,7 +77,7 @@ def get_measure_type():
 
 def get_series():
     series_list = []
-    series_file = open('series.csv','r')
+    series_file = open('laus_series.csv','r')
     series_lines = series_file.readlines()
     for line in series_lines:
         series_list.append(line.replace('\n',''))
