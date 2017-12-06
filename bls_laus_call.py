@@ -9,6 +9,7 @@ def retrieve_bls():
     measure_type_dict = get_measure_type()
     series_list = get_series()
     thisyear = datetime.date.today().year
+    # months_dict is a crosswalk from the bls.gov output to a month alias.
     months_dict = {'M01':'January','M02':'February','M03':'March','M04':'April',
     'M05':'May','M06':'June','M07':'July','M08':'August','M09':'September',
     'M10':'October','M11':'November','M12':'December'}
@@ -21,6 +22,10 @@ def retrieve_bls():
     laus_data.write('series,area_type,area,year,period,value,measure,footnote,source,retrieved' + '\n')
     for series in json_data['Results']['series']:
         seriesId = series['seriesID']
+        # The measure, area, and area_type variables reference slices of the
+        # SeriesID that are used by bls.gov to identify various attributes of
+        # the Series. These are then translated to aliases with months_dict,
+        # measure_type_dict and area_dict.
         for item in series['data']:
             year = item['year']
             period = months_dict[item['period']]
@@ -47,6 +52,9 @@ def retrieve_bls():
             )
     laus_data.close()
 
+# Pull the table of area names from bls.gov. This is needed as a crosswalk
+# from SeriesIDs to area name aliases. The resulting dict is then used in the
+# above request function.
 def get_areas():
     bls_areas = urllib.request.urlopen('https://download.bls.gov/pub/time.series/la/la.area')
     area_string = []
@@ -55,12 +63,18 @@ def get_areas():
         line = line_decode.split('\t')
         area_string.append(line)
         area_dict = {}
+        # Many area names include a comma between the area name and its state.
+        # These must be removed to prevent unintentional breaks in the csv
+        # output file.
         for a in area_string:
             key = a[1]
             key_clean = key.replace(",","")
             area_dict[key_clean] = a[2]
     return area_dict
 
+# Pull the table of measure types from bls.gov. This is needed as a crosswalk
+# from SeriesIDs to measure aliases. The resulting dict is then used in the
+# above request function.
 def get_measure_type():
     bls_measure_types = urllib.request.urlopen('https://download.bls.gov/pub/time.series/la/la.measure')
     measure_type_string = []
@@ -69,16 +83,23 @@ def get_measure_type():
         line = line_decode.split('\t')
         measure_type_string.append(line)
         measure_type_dict = {}
+        # The returned strings include extraneous commas that need to be removed
+        # before populating measure_type_dict to prevent unintentional breaks in
+        # the csv output file.
         for a in measure_type_string:
             key = a[0]
             key_clean = key.replace(",","")
             measure_type_dict[key_clean] = a[1]
     return measure_type_dict
 
+# Open the file laus_series.csv in the current directory and convert the
+# contents to a list of SeriesIDs to be requested.
 def get_series():
     series_list = []
     series_file = open('laus_series.csv','r')
     series_lines = series_file.readlines()
+    # Remove the new line character fromm each line before appending to
+    # series_list.
     for line in series_lines:
         series_list.append(line.replace('\n',''))
     series_file.close()
