@@ -60,44 +60,43 @@ def retrieve_bls():
     'M05':'May','M06':'June','M07':'July','M08':'August','M09':'September',
     'M10':'October','M11':'November','M12':'December'}
     headers = {'Content-type': 'application/json'}
-    for y in range(2000:thisyear):
-        data = json.dumps({"seriesid":series_list,"startyear":y, "endyear":y})
-        p = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/', data=data, headers=headers)
-        json_data = json.loads(p.text)
-        outfile = 'laus_data.txt'
-        laus_data = open(outfile,'w')
-        laus_data.write('series,area_type,area,year,period,value,measure,footnote,source,retrieved' + '\n')
-        for series in json_data['Results']['series']:
-            seriesId = series['seriesID']
-            # The measure, area, and area_type variables reference slices of the
-            # SeriesID that are used by bls.gov to identify various attributes of
-            # the Series. These are then translated to aliases with months_dict,
-            # measure_type_dict and area_dict.
-            for item in series['data']:
-                year = item['year']
-                period = months_dict[item['period']]
-                measure = measure_type_dict[seriesId[-2:]]
-                value = item['value']
-                area = area_dict[seriesId[3:18]].replace(',','')
-                area_type = area_type_dict[seriesId[3:5]]
-                retrieved = str(datetime.date.today())
-                footnotes=""
-                for footnote in item['footnotes']:
-                    if footnote:
-                        footnotes = footnotes + footnote['text'] + ','
-                laus_data.write(
-                seriesId + ',' +
-                area_type + ',' +
-                area + ',' +
-                year + ',' +
-                period +',' +
-                measure + ',' +
-                value + ',' +
-                footnotes[0:-1] + ',' +
-                'Bureau of Labor Statistics: LAUS,' +
-                retrieved + '\n'
-                )
-        laus_data.close()
+    data = json.dumps({"seriesid":series_list, "startyear":thisyear-9, "endyear":thisyear})
+    p = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/', data=data, headers=headers)
+    json_data = json.loads(p.text)
+    outfile = 'laus_data.txt'
+    laus_data = open(outfile,'w')
+    laus_data.write('series,area_type,area,year,period,value,measure,footnote,source,retrieved' + '\n')
+    for series in json_data['Results']['series']:
+        seriesId = series['seriesID']
+        # The measure, area, and area_type variables reference slices of the
+        # SeriesID that are used by bls.gov to identify various attributes of
+        # the Series. These are then translated to aliases with months_dict,
+        # measure_type_dict and area_dict.
+        for item in series['data']:
+            year = item['year']
+            period = months_dict[item['period']]
+            measure = measure_type_dict[seriesId[-2:]]
+            value = item['value']
+            area = area_dict[seriesId[3:18]].replace(',','')
+            area_type = area_type_dict[seriesId[3:5]]
+            retrieved = str(datetime.date.today())
+            footnotes=""
+            for footnote in item['footnotes']:
+                if footnote:
+                    footnotes = footnotes + footnote['text'] + ','
+            laus_data.write(
+            seriesId + ',' +
+            area_type + ',' +
+            area + ',' +
+            year + ',' +
+            period +',' +
+            measure + ',' +
+            value + ',' +
+            footnotes[0:-1] + ',' +
+            'Bureau of Labor Statistics: LAUS,' +
+            retrieved + '\n'
+            )
+    laus_data.close()
 
 # Pull the table of area names from bls.gov. This is needed as a crosswalk
 # from SeriesIDs to area name aliases. The resulting dict is then used in the
