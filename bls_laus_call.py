@@ -60,8 +60,8 @@ def retrieve_bls():
     'M05':'May','M06':'June','M07':'July','M08':'August','M09':'September',
     'M10':'October','M11':'November','M12':'December'}
     headers = {'Content-type': 'application/json'}
-    data = json.dumps({"seriesid":series_list, "startyear":thisyear-9, "endyear":thisyear})
-    p = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/', data=data, headers=headers)
+    data = json.dumps({"seriesid":series_list, "startyear":thisyear-19, "endyear":thisyear})
+    p = requests.post('https://api.bls.gov/publicAPI/v2/timeseries/data/?registrationkey=a0ab0f27819f4f3780d5ad7bdc4bd6bc', data=data, headers=headers)
     json_data = json.loads(p.text)
     outfile = 'laus_data.txt'
     laus_data = open(outfile,'w')
