@@ -22,7 +22,8 @@ def get_qwi():
     data = data.read()
     data = data.decode()
     json_data = json.loads(data)
-    return json_data
+    for line in json_data:
+        output.write(line + '\n')
     output.close()
 
 def makeindustriesstring():
@@ -31,7 +32,7 @@ def makeindustriesstring():
     for line in allindustries.readlines():
         line = line.decode()
         line = line.split(',')
-        if len(str(line[0])) == 4:
+        if len(str(line[0])) == 4 and line[0].isnumeric():
             industries += '&industry=' + str(line[0])
     return industries
 
