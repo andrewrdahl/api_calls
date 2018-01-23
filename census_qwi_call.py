@@ -13,10 +13,17 @@ def get_qwi():
     industries = makeindustriesstring()
     api_key = '&key=9ae00c2db5c1bafe8af93f69a11b8a263899a930'
     geographies = [
-    '&for=workforce+investment+area:SDA100,SDA090,SDA150&in=state:27',
+    '&for=workforce+investment+area:SDA100,SDA090,SDA140&in=state:27',
     '&for=metropolitan+statistical+area/micropolitan+statistical+area:33460&in=state:27'
     ]
-    geo_labels = {'SDA100':'City of Minneapolis WSA','SDA090':'Hennepin/Carver WSA','SDA150':'Ramsey County WSA','33460':'Minneapolis-St. Paul-Bloomington, MN-WI (MN part)'}
+    geo_labels = {
+    'SDA100':'City of Minneapolis WSA',
+    'SDA090':'Hennepin/Carver WSA',
+    'SDA150':'Ramsey County WSA',
+    '33460':'Minneapolis-St. Paul-Bloomington, MN-WI (MN part)',
+    'SDA120':'Anoka County WSA',
+    'SDA160':'Washington County WSA',
+    'SDA140':'Dakota/Scott County WSA'}
     race_dict = makeracedict()
     ethnicity_dict = makeethnicitydict()
     industry_dict = makeindustrydict()
@@ -37,18 +44,19 @@ def get_qwi():
             Sep = str(line[4])
             EarnS = str(line[5])
             EarnHirNS = str(line[6])
-            race = str(line[7])
-            ethnicity = str(line[8])
+            race = race_dict[str(line[7])]
+            ethnicity = ethnicity_dict[str(line[8])]
             year = str(line[9][0:4])
             quarter = str(line[9][-2:])
-            industry = str(line[10])
-            state = str(line[11])
-            area = str(line[12])
+            naics = str(line[10])
             area_label = geo_labels[str(line[12])]
-            output.write(area + ',' + year + ',' + quarter + ',' + race + ',' + ethnicity + ',' + industry + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
+            if str(line[12][0:2]) == 'SDA':
+                area_code = str(line[11]) + str(line[12])
+            else:
+                area_code = str(line[12])
+            output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
     output.close()
-    print(race_dict)
-    print(ethnicity_dict)
+    return json_data[0]
 
 def makeindustriesstring():
     industries = ''
@@ -88,7 +96,7 @@ def makeethnicitydict():
     return ethnicity_dict
 
 def main():
-    print(makeindustrydict())
+    print(get_qwi())
 
 if __name__ == '__main__':
     main()
