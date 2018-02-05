@@ -28,6 +28,7 @@ def get_qwi():
     race_dict = makeracedict()
     ethnicity_dict = makeethnicitydict()
     industry_dict = makeindustrydict()
+    geo_dict = makegeographydict()
 
     for key in get_geos.keys():
         for value in get_geos[key]:
@@ -52,15 +53,14 @@ def get_qwi():
                 year = str(line[9][0:4])
                 quarter = str(line[9][-2:])
                 naics = str(line[10])
-                area_label = geo_labels[str(line[12])]
                 if str(line[12][0:2]) == 'SDA':
                     area_code = str(line[11]) + str(line[12])
                 else:
                     area_code = str(line[12])
-                output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
+                    area_label = geo_dict[area_code]
+                    if area_code != 'area_code':
+                        output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
     output.close()
-    return json_data[0]
-    print('Enjoy your data!')
 
 def makeindustriesstring():
     industries = ''
@@ -99,8 +99,20 @@ def makeethnicitydict():
         ethnicity_dict[line[0]]=line[1].replace('\n','').replace('"','')
     return ethnicity_dict
 
+def makegeographydict():
+    geo_dict = {}
+    geographylist = urllib.request.urlopen('https://lehd.ces.census.gov/data/schema/latest/label_geography.csv')
+    for line in geographylist.readlines():
+        line = line.rstrip()
+        if line:
+            line = line.decode()
+            line = line.split(',')
+            geo_dict[line[0]]=line[1].replace('\n','').replace('"','')
+    return geo_dict
+
 def main():
-    get_qwi()
+    print(get_qwi())
+    print('Enjoy your data!')
 
 if __name__ == '__main__':
     main()
