@@ -12,10 +12,11 @@ def get_qwi():
     currentyear = datetime.date.today().year
     industries = makeindustriesstring()
     api_key = '&key=9ae00c2db5c1bafe8af93f69a11b8a263899a930'
-    geographies = [
-    '&for=workforce+investment+area:SDA100,SDA090,SDA140&in=state:27',
-    '&for=metropolitan+statistical+area/micropolitan+statistical+area:33460&in=state:27'
-    ]
+    get_geos = {
+    'workforce+investment+area':[['SDA100','27'],['SDA090','27'],['SDA120','27'],['SDA140','27'],['SDA150','27'],['SDA160','27']],
+    'metropolitan+statistical+area/micropolitan+statistical+area':[['33460','27']]
+    }
+
     geo_labels = {
     'SDA100':'City of Minneapolis WSA',
     'SDA090':'Hennepin/Carver WSA',
@@ -28,35 +29,38 @@ def get_qwi():
     ethnicity_dict = makeethnicitydict()
     industry_dict = makeindustrydict()
 
-    for g in geographies:
-        thisgeo = str(g)
-        URLpath = URL_base + variables + thisgeo + startyear + str(currentyear) + industries + api_key
+    for key in get_geos.keys():
+        for value in get_geos[key]:
+            thisgeo = '&for=' + key + ":" + value[0] + '&in=state:' + value[1]
+            URLpath = URL_base + variables + thisgeo + startyear + str(currentyear) + industries + api_key
 
-        data = urllib.request.urlopen(URLpath)
-        data = data.read()
-        data = data.decode()
-        json_data = json.loads(data)
-        for line in json_data[1:]:
-            Emp = str(line[0])
-            EmpEnd = str(line[1])
-            EmpS = str(line[2])
-            HirA = str(line[3])
-            Sep = str(line[4])
-            EarnS = str(line[5])
-            EarnHirNS = str(line[6])
-            race = race_dict[str(line[7])]
-            ethnicity = ethnicity_dict[str(line[8])]
-            year = str(line[9][0:4])
-            quarter = str(line[9][-2:])
-            naics = str(line[10])
-            area_label = geo_labels[str(line[12])]
-            if str(line[12][0:2]) == 'SDA':
-                area_code = str(line[11]) + str(line[12])
-            else:
-                area_code = str(line[12])
-            output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
+            data = urllib.request.urlopen(URLpath)
+            data = data.read()
+            data = data.decode()
+            json_data = json.loads(data)
+            output.write('area_code, area_label, year, quarter, race, ethnicity, naics, employment, employment_end_of_quarter, employment_stable, hires, separations \n')
+            for line in json_data[1:]:
+                Emp = str(line[0]).replace('None','')
+                EmpEnd = str(line[1]).replace('None','')
+                EmpS = str(line[2]).replace('None','')
+                HirA = str(line[3]).replace('None','')
+                Sep = str(line[4]).replace('None','')
+                EarnS = str(line[5]).replace('None','')
+                EarnHirNS = str(line[6]).replace('None','')
+                race = race_dict[str(line[7])]
+                ethnicity = ethnicity_dict[str(line[8])]
+                year = str(line[9][0:4])
+                quarter = str(line[9][-2:])
+                naics = str(line[10])
+                area_label = geo_labels[str(line[12])]
+                if str(line[12][0:2]) == 'SDA':
+                    area_code = str(line[11]) + str(line[12])
+                else:
+                    area_code = str(line[12])
+                output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
     output.close()
     return json_data[0]
+    print('Enjoy your data!')
 
 def makeindustriesstring():
     industries = ''
@@ -96,7 +100,7 @@ def makeethnicitydict():
     return ethnicity_dict
 
 def main():
-    print(get_qwi())
+    get_qwi()
 
 if __name__ == '__main__':
     main()
