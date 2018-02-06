@@ -23,7 +23,7 @@ def get_qwi():
     # area code and the second item is the respective state.
     get_geos = {
     'workforce+investment+area':[['SDA100','27'],['SDA090','27'],['SDA120','27'],['SDA140','27'],['SDA150','27'],['SDA160','27']],
-    'metropolitan+statistical+area/micropolitan+statistical+area':[['33460','27']]
+    'metropolitan+statistical+area/micropolitan+statistical+area':[['33460','27'],['33460','55']]
     }
     # Add field headers to the output file.
     output.write('area_code, area_label, year, quarter, race, ethnicity, naics, employment, employment_end_of_quarter, employment_stable, hires, separations, avg_monthly_wages_stable, avg_monthly_wages_newhires \n')
@@ -38,12 +38,17 @@ def get_qwi():
             data = data.read()
             data = data.decode()
             json_data = json.loads(data)
-            # Iterate through each line of the returned data and convert each
-            # data point to a cleaned string.
-            if key == 'workforce+investment+area':
+
+            # The Census area codes returned from makegeographydict() are
+            # janky and start with the state code for WIA geographies, but
+            # no state prefix for other geographies. The area code output
+            # needs to be adjusted in order to lookup the proper area label.
+            if key in ('workforce+investment+area', 'metropolitan+statistical+area/micropolitan+statistical+area'):
                 area_code = str(value[1]) + str(value[0])
             else:
                 area_code = str(value[0])
+            # Iterate through each line of the returned data and convert each
+            # data point to a cleaned string.
             for line in json_data[1:]:
                 Emp = str(line[0]).replace('None','')
                 EmpEnd = str(line[1]).replace('None','')
@@ -52,16 +57,13 @@ def get_qwi():
                 Sep = str(line[4]).replace('None','')
                 EarnS = str(line[5]).replace('None','')
                 EarnHirNS = str(line[6]).replace('None','')
-                race = race_dict[str(line[7])]
+                race = race_dict[str(line[7])].replace(' Alone','')
                 ethnicity = ethnicity_dict[str(line[8])]
                 year = str(line[9][0:4])
                 quarter = str(line[9][-2:])
                 naics = str(line[10])
                 area_label = geo_dict[area_code]
-                # The Census area codes returned from makegeographydict() are
-                # janky and start with the state code for WIA geographies, but
-                # no state prefix for other geographies. The area code output
-                # needs to be adjusted in order to lookup the proper area label.
+                # Filter out any record where every data point is None.
                 if (
                 (
                 (len(Emp) > 0) or
@@ -72,6 +74,7 @@ def get_qwi():
                 (len(EarnS) > 0) or
                 (len(EarnHirNS) > 0)
                 ) and
+                # Return only records from the major race/ethnicity groups.
                 (
                 (str(line[7]) == 'A0' and str(line[8]) == 'A0') or
                 (str(line[7]) == 'A0' and str(line[8]) == 'A2') or
@@ -88,6 +91,7 @@ def get_qwi():
     output.close()
 
 def makeindustriesstring():
+    # Retrieve all 4-digit NAICS codes and construct a string to pass to the API.
     industries = ''
     allindustries = urllib.request.urlopen('https://lehd.ces.census.gov/data/schema/latest/label_industry.csv')
     for line in allindustries.readlines():
@@ -98,6 +102,7 @@ def makeindustriesstring():
     return industries
 
 def makeindustrydict():
+    # Retrieve all NAICS codes and labels and make a dict for look up.
     industry_dict = {}
     industry_list = urllib.request.urlopen('http://lehd.ces.census.gov/data/schema/latest/label_industry.csv')
     for line in industry_list.readlines():
@@ -107,6 +112,7 @@ def makeindustrydict():
     return industry_dict
 
 def makeracedict():
+    # Retrieve all race codes and labels and make a dict for look up.
     race_dict = {}
     racelist = urllib.request.urlopen('https://lehd.ces.census.gov/data/schema/latest/label_race.csv')
     for line in racelist.readlines():
@@ -116,6 +122,7 @@ def makeracedict():
     return race_dict
 
 def makeethnicitydict():
+    # Retrieve all ethnicity codes and labels and make a dict for look up.
     ethnicity_dict = {}
     ethnicitylist = urllib.request.urlopen('https://lehd.ces.census.gov/data/schema/latest/label_ethnicity.csv')
     for line in ethnicitylist.readlines():
@@ -125,6 +132,7 @@ def makeethnicitydict():
     return ethnicity_dict
 
 def makegeographydict():
+    # Retrieve all geography codes and labels and make a dict for look up.
     geo_dict = {}
     geographylist = urllib.request.urlopen('https://lehd.ces.census.gov/data/schema/latest/label_geography.csv')
     for line in geographylist.readlines():
@@ -132,11 +140,14 @@ def makegeographydict():
         if line:
             line = line.decode()
             line = line.split(',')
-            geo_dict[line[0]]=line[1].replace('\n','').replace('"','')
+            if len(line) == 4:
+                geo_dict[line[0]] = line[1].replace('\n','').replace('"','') + ';' + line[2].replace('\n','').replace('"','')
+            else:
+                geo_dict[line[0]]=line[1].replace('\n','').replace('"','')
     return geo_dict
 
 def main():
-    print(get_qwi())
+    get_qwi()
     print('Enjoy your data!')
 
 if __name__ == '__main__':
