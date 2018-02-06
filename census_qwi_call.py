@@ -87,7 +87,7 @@ def get_qwi():
                 (str(line[7]) == 'A7' and str(line[8]) == 'A1')
                 )
                  ):
-                    output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
+                    output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + ',' + EarnS + ',' + EarnHirNS '\n')
     output.close()
 
 def makeindustriesstring():
