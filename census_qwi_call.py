@@ -11,35 +11,39 @@ def get_qwi():
     startyear = '&time=from+2015+to+'
     currentyear = datetime.date.today().year
     industries = makeindustriesstring()
-    api_key = '&key=9ae00c2db5c1bafe8af93f69a11b8a263899a930'
-    get_geos = {
-    'workforce+investment+area':[['SDA100','27'],['SDA090','27'],['SDA120','27'],['SDA140','27'],['SDA150','27'],['SDA160','27']],
-    'metropolitan+statistical+area/micropolitan+statistical+area':[['33460','27']]
-    }
-
-    geo_labels = {
-    'SDA100':'City of Minneapolis WSA',
-    'SDA090':'Hennepin/Carver WSA',
-    'SDA150':'Ramsey County WSA',
-    '33460':'Minneapolis-St. Paul-Bloomington, MN-WI (MN part)',
-    'SDA120':'Anoka County WSA',
-    'SDA160':'Washington County WSA',
-    'SDA140':'Dakota/Scott County WSA'}
     race_dict = makeracedict()
     ethnicity_dict = makeethnicitydict()
     industry_dict = makeindustrydict()
     geo_dict = makegeographydict()
-
+    # API keys can be registered at https://api.census.gov/data/key_signup.html
+    api_key = '&key=9ae00c2db5c1bafe8af93f69a11b8a263899a930'
+    # The get_geos dict contains the geographies to be retrieved. The dict keys
+    # are the area predicates called in the API request. The value of each key
+    # is a nested list in which the first item of each individual list is the
+    # area code and the second item is the respective state.
+    get_geos = {
+    'workforce+investment+area':[['SDA100','27'],['SDA090','27'],['SDA120','27'],['SDA140','27'],['SDA150','27'],['SDA160','27']],
+    'metropolitan+statistical+area/micropolitan+statistical+area':[['33460','27']]
+    }
+    # Add field headers to the output file.
+    output.write('area_code, area_label, year, quarter, race, ethnicity, naics, employment, employment_end_of_quarter, employment_stable, hires, separations, avg_monthly_wages_stable, avg_monthly_wages_newhires \n')
+    # Iterate through each key and each list within its values from get_geos.
     for key in get_geos.keys():
         for value in get_geos[key]:
+            # Construct the URL string for the api call.
             thisgeo = '&for=' + key + ":" + value[0] + '&in=state:' + value[1]
             URLpath = URL_base + variables + thisgeo + startyear + str(currentyear) + industries + api_key
-
+            # Call the constructed URL and open the returned data.
             data = urllib.request.urlopen(URLpath)
             data = data.read()
             data = data.decode()
             json_data = json.loads(data)
-            output.write('area_code, area_label, year, quarter, race, ethnicity, naics, employment, employment_end_of_quarter, employment_stable, hires, separations \n')
+            # Iterate through each line of the returned data and convert each
+            # data point to a cleaned string.
+            if key == 'workforce+investment+area':
+                area_code = str(value[1]) + str(value[0])
+            else:
+                area_code = str(value[0])
             for line in json_data[1:]:
                 Emp = str(line[0]).replace('None','')
                 EmpEnd = str(line[1]).replace('None','')
@@ -53,13 +57,12 @@ def get_qwi():
                 year = str(line[9][0:4])
                 quarter = str(line[9][-2:])
                 naics = str(line[10])
-                if str(line[12][0:2]) == 'SDA':
-                    area_code = str(line[11]) + str(line[12])
-                else:
-                    area_code = str(line[12])
-                    area_label = geo_dict[area_code]
-                    if area_code != 'area_code':
-                        output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
+                area_label = geo_dict[area_code]
+                # The Census area codes returned from makegeographydict() are
+                # janky and start with the state code for WIA geographies, but
+                # no state prefix for other geographies. The area code output
+                # needs to be adjusted in order to lookup the proper area label.
+                output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
     output.close()
 
 def makeindustriesstring():
