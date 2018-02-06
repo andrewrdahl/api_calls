@@ -62,7 +62,29 @@ def get_qwi():
                 # janky and start with the state code for WIA geographies, but
                 # no state prefix for other geographies. The area code output
                 # needs to be adjusted in order to lookup the proper area label.
-                output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
+                if (
+                (
+                (len(Emp) > 0) or
+                (len(EmpEnd) > 0) or
+                (len(EmpS) > 0) or
+                (len(HirA) > 0) or
+                (len(Sep) > 0) or
+                (len(EarnS) > 0) or
+                (len(EarnHirNS) > 0)
+                ) and
+                (
+                (str(line[7]) == 'A0' and str(line[8]) == 'A0') or
+                (str(line[7]) == 'A0' and str(line[8]) == 'A2') or
+                (str(line[7]) == 'A1' and str(line[8]) == 'A1') or
+                (str(line[7]) == 'A2' and str(line[8]) == 'A1') or
+                (str(line[7]) == 'A3' and str(line[8]) == 'A1') or
+                (str(line[7]) == 'A4' and str(line[8]) == 'A1') or
+                (str(line[7]) == 'A5' and str(line[8]) == 'A1') or
+                (str(line[7]) == 'A6' and str(line[8]) == 'A1') or
+                (str(line[7]) == 'A7' and str(line[8]) == 'A1')
+                )
+                 ):
+                    output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + '\n')
     output.close()
 
 def makeindustriesstring():
