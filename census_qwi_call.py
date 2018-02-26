@@ -8,7 +8,7 @@ def get_qwi():
     output = open('data_census_qwi.txt','w')
     URL_base = 'https://api.census.gov/data/timeseries/qwi/rh?'
     variables = 'get=Emp,EmpEnd,EmpS,HirA,Sep,EarnS,EarnHirNS,race,ethnicity'
-    startyear = '&time=from+2015+to+'
+    startyear = '&time=from+2009+to+'
     currentyear = datetime.date.today().year
     industries = makeindustriesstring()
     race_dict = makeracedict()
@@ -26,7 +26,7 @@ def get_qwi():
     'metropolitan+statistical+area/micropolitan+statistical+area':[['33460','27'],['33460','55']]
     }
     # Add field headers to the output file.
-    output.write('area_code, area_label, year, quarter, race, ethnicity, naics, employment, employment_end_of_quarter, employment_stable, hires, separations, avg_monthly_wages_stable, avg_monthly_wages_newhires \n')
+    output.write('area_code, year, quarter, race, ethnicity, naics, employment, employment_end_of_quarter, employment_stable, hires, separations, avg_monthly_wages_stable, avg_monthly_wages_newhires \n')
     # Iterate through each key and each list within its values from get_geos.
     for key in get_geos.keys():
         for value in get_geos[key]:
@@ -87,7 +87,7 @@ def get_qwi():
                 (str(line[7]) == 'A7' and str(line[8]) == 'A1')
                 )
                  ):
-                    output.write(area_code + ',' + area_label + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + ',' + EarnS + ',' + EarnHirNS + '\n')
+                    output.write(area_code + ',' + year + ',' +  quarter + ',' + race + ',' + ethnicity + ',' + naics + ',' + Emp + ',' + EmpEnd + ',' + EmpS + ',' + HirA + ',' + Sep + ',' + EarnS + ',' + EarnHirNS + '\n')
     output.close()
 
 def makeindustriesstring():
@@ -135,6 +135,7 @@ def makegeographydict():
     # Retrieve all geography codes and labels and make a dict for look up.
     geo_dict = {}
     geographylist = urllib.request.urlopen('https://lehd.ces.census.gov/data/schema/latest/label_geography.csv')
+    geo_file = open('data_qwi_geographies.txt','w')
     for line in geographylist.readlines():
         line = line.rstrip()
         if line:
@@ -142,8 +143,11 @@ def makegeographydict():
             line = line.split(',')
             if len(line) == 4:
                 geo_dict[line[0]] = line[1].replace('\n','').replace('"','') + ';' + line[2].replace('\n','').replace('"','')
+                geo_file.write(geo_dict[line[0]] + ',' + line[1].replace('\n','').replace('"','') + ';' + line[2].replace('\n','').replace('"','') + '\n')
             else:
                 geo_dict[line[0]]=line[1].replace('\n','').replace('"','')
+                geo_file.write(geo_dict[line[0]] + ',' + line[1].replace('\n','').replace('"','') + ';' + line[2].replace('\n','').replace('"','') + '\n')
+    geo_file.close()
     return geo_dict
 
 def main():
